@@ -9,16 +9,38 @@ import (
 	"io"
 	"bytes"
 	"path/filepath"
+	"strings"
 )
 
 var listd string
 
+var Adlist map[string]bool
+
 type Handle struct {
 }
 func (h *Handle) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
-	fmt.Printf("Req %+v\n", req)
+	//fmt.Printf("Req %+v\n", req)
 
-	// Blacklisted?
+	// Blacklist lookup
+	domain := req.Question[0].String()
+	if strings.HasSuffix(domain, "A") {
+		domain = domain[1 : strings.LastIndex(domain, ".") ]
+		fmt.Printf("LOOKUP=%s\n", domain)
+		if _, ok := Adlist[domain]; ok {
+			// todo: now what?
+			fmt.Printf("DROP=%s\n", domain)
+
+			m := new(dns.Msg)
+			for _, r := range req.Extra {
+				if r.Header().Rrtype == dns.TypeOPT {
+					m.SetEdns0(4096, r.(*dns.OPT).Do())
+				}
+			}
+			m.SetRcode(req, dns.RcodeRefused)
+			w.WriteMsg(m)
+			return
+		}
+	}
 
 	// Forward
 	c := new(dns.Client)
@@ -106,9 +128,17 @@ func visit(path string, f os.FileInfo, err error) error {
 				domain = domain[:hidx]
 			}
 			// TODO: Save
+			Adlist[string(domain)] = true
 			//fmt.Printf("%s\n",domain)
 		}
 	}
+	return nil
+}
+
+// https://developers.google.com/safe-browsing/developers_guide_v3
+func googleLookup() error {
+	//key := "XXXX"
+	//url := "https://safebrowsing.google.com/safebrowsing/downloads?client=api&key=" + key + "&appver=1.0.0&pver=3.0"
 	return nil
 }
 
@@ -120,6 +150,7 @@ func main() {
 	flag.StringVar(&listd, "d", "./list.d", "Dir with blacklisted domain files")
 	handler := &Handle{}
 
+	Adlist = make(map[string]bool)
 	if e := filepath.Walk(listd, visit); e != nil {
 		panic(e)
 	}
