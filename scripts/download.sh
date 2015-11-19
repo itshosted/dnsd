@@ -4,6 +4,7 @@
 set -u
 set -x
 
+mkdir ../list.d
 sources=('https://adaway.org/hosts.txt'
 'http://adblock.gjtech.net/?format=unix-hosts'
 #'http://adblock.mahakala.is/'
