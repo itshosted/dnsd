@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"flag"
-	"github.com/miekg/dns"
-	"os"
 	"bufio"
-	"io"
 	"bytes"
+	"flag"
+	"fmt"
+	"github.com/miekg/dns"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -18,13 +18,14 @@ var Adlist map[string]bool
 
 type Handle struct {
 }
+
 func (h *Handle) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 	//fmt.Printf("Req %+v\n", req)
 
 	// Blacklist lookup
 	domain := req.Question[0].String()
 	if strings.HasSuffix(domain, "A") {
-		domain = domain[1 : strings.LastIndex(domain, ".") ]
+		domain = domain[1:strings.LastIndex(domain, ".")]
 		fmt.Printf("LOOKUP=%s\n", domain)
 		if _, ok := Adlist[domain]; ok {
 			// todo: now what?
@@ -44,7 +45,7 @@ func (h *Handle) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 
 	// Forward
 	c := new(dns.Client)
-	res, rtt, err := c.Exchange(req, "8.8.8.8:53");
+	res, rtt, err := c.Exchange(req, "8.8.8.8:53")
 	if err != nil {
 		fmt.Printf("Lookup fail %s", err.Error())
 		m := new(dns.Msg)
@@ -156,15 +157,15 @@ func main() {
 	}
 
 	//for _, addr := range strings.Split(listen, ",") {
-		fmt.Printf("DNS Listen %s\n", addr)
-		go func() {
-			if err := dns.ListenAndServe(addr, "udp", handler); err != nil {
-				panic(err)
-			}
-		}()
-
-		if err := dns.ListenAndServe(addr, "tcp", handler); err != nil {
+	fmt.Printf("DNS Listen %s\n", addr)
+	go func() {
+		if err := dns.ListenAndServe(addr, "udp", handler); err != nil {
 			panic(err)
 		}
+	}()
+
+	if err := dns.ListenAndServe(addr, "tcp", handler); err != nil {
+		panic(err)
+	}
 	//}
 }
