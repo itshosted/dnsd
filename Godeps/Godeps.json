@@ -1,0 +1,10 @@
+{
+	"ImportPath": "dnsd",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/miekg/dns",
+			"Rev": "d27455715200c7d3e321a1e5cadb27c9ee0b0f02"
+		}
+	]
+}
